@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/sean0427/micro-service-pratice-product-domain/model"
 )
 
@@ -37,9 +38,9 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *handler) InitHandler() *http.ServeMux {
-	handler := http.NewServeMux()
-	handler.HandleFunc("/products", h.Get)
+func (h *handler) InitHandler() *chi.Mux {
+	r := chi.NewRouter()
+	r.HandleFunc("/products", h.Get)
 
-	return handler
+	return r
 }
