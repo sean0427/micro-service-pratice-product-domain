@@ -18,10 +18,14 @@ func New(db *gorm.DB) *repository {
 	}
 }
 
-func (r *repository) Get(ctx context.Context) ([]*model.Product, error) {
+func (r *repository) Get(ctx context.Context, params model.GetProductsParams) ([]*model.Product, error) {
 	// TODO
 	var products []*model.Product
 	tx := r.db.WithContext(ctx)
+
+	if params.Name != nil {
+		tx = tx.Where("name = ?", *params.Name)
+	}
 
 	result := tx.Find(&products)
 
