@@ -81,7 +81,7 @@ func Test_reposity_Get(t *testing.T) {
 			testParams := c.testParams
 			repo := repository{db: testingDB}
 
-			prodct, err := repo.Get(context.Background(), testParams)
+			prodct, err := repo.Get(context.Background(), &testParams)
 
 			if err != nil && !c.wantError {
 				t.Errorf("got error %v", err)

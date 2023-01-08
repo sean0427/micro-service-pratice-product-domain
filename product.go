@@ -7,7 +7,7 @@ import (
 )
 
 type repository interface {
-	Get(ctx context.Context) ([]*model.Product, error)
+	Get(ctx context.Context, params *model.GetProductsParams) ([]*model.Product, error)
 	GetByID(ctx context.Context, id string) (*model.Product, error)
 }
 
@@ -21,8 +21,8 @@ func New(repo repository) *ProductService {
 	}
 }
 
-func (s *ProductService) Get(ctx context.Context) ([]*model.Product, error) {
-	return s.repo.Get(ctx)
+func (s *ProductService) Get(ctx context.Context, params *model.GetProductsParams) ([]*model.Product, error) {
+	return s.repo.Get(ctx, params)
 }
 
 func (s *ProductService) GetByID(ctx context.Context, id string) (*model.Product, error) {

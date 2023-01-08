@@ -9,7 +9,7 @@ import (
 
 type mockRepo struct{}
 
-func (r *mockRepo) Get(ctx context.Context) ([]*model.Product, error) {
+func (r *mockRepo) Get(ctx context.Context, params *model.GetProductsParams) ([]*model.Product, error) {
 	return []*model.Product{{ID: "test"}}, nil
 }
 
@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 
 func TestProductService_Get(t *testing.T) {
 	t.Run("Should success get product", func(t *testing.T) {
-		list, err := testService.Get(context.TODO())
+		list, err := testService.Get(context.TODO(), nil)
 
 		if len(list) == 0 {
 			t.Errorf("Get product list is empty")

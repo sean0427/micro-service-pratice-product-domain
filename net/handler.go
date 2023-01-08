@@ -10,8 +10,8 @@ import (
 )
 
 type service interface {
-	Get() ([]*model.Product, error)
-	GetById(context.Context, string) (*model.Product, error)
+	Get(context.Context, *model.GetProductsParams) ([]*model.Product, error)
+	GetByID(context.Context, string) (*model.Product, error)
 }
 
 type handler struct {
@@ -26,7 +26,13 @@ func New(service service) *handler {
 func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	products, err := h.service.Get()
+	params := model.GetProductsParams{}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	products, err := h.service.Get(r.Context(), &params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -45,7 +51,7 @@ func (h *handler) GetById(w http.ResponseWriter, r *http.Request) {
 
 	id := chi.URLParam(r, "id")
 
-	product, err := h.service.GetById(r.Context(), id)
+	product, err := h.service.GetByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
