@@ -1,9 +1,14 @@
 package product
 
-import "github.com/sean0427/micro-service-pratice-product-domain/model"
+import (
+	"context"
+
+	"github.com/sean0427/micro-service-pratice-product-domain/model"
+)
 
 type repository interface {
-	Get() ([]*model.Product, error)
+	Get(ctx context.Context, params *model.GetProductsParams) ([]*model.Product, error)
+	GetByID(ctx context.Context, id string) (*model.Product, error)
 }
 
 type ProductService struct {
@@ -16,6 +21,10 @@ func New(repo repository) *ProductService {
 	}
 }
 
-func (s *ProductService) Get() ([]*model.Product, error) {
-	return s.repo.Get()
+func (s *ProductService) Get(ctx context.Context, params *model.GetProductsParams) ([]*model.Product, error) {
+	return s.repo.Get(ctx, params)
+}
+
+func (s *ProductService) GetByID(ctx context.Context, id string) (*model.Product, error) {
+	return s.repo.GetByID(ctx, id)
 }
