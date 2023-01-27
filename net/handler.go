@@ -65,7 +65,7 @@ func (h *handler) GetById(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *handler) InitHandler() *chi.Mux {
+func (h *handler) Handler() *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Route("/products", func(r chi.Router) {
