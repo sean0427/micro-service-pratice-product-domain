@@ -40,7 +40,7 @@ func newMongoDB() (*mongo.Client, error) {
 	}
 	port := config.GetMongoDBPort()
 	return mongo.Connect(context.Background(), options.Client().
-		ApplyURI(fmt.Sprintf("%s:%s", addr, port)).
+		ApplyURI(fmt.Sprintf("mongodb://%s:%s", addr, port)).
 		SetAuth(options.Credential{
 			Username: username,
 			Password: password,
