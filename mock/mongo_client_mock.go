@@ -13,31 +13,31 @@ import (
 	options "go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// MockMongoClient is a mock of MongoClient interface.
-type MockMongoClient struct {
+// MockmongoClient is a mock of mongoClient interface.
+type MockmongoClient struct {
 	ctrl     *gomock.Controller
-	recorder *MockMongoClientMockRecorder
+	recorder *MockmongoClientMockRecorder
 }
 
-// MockMongoClientMockRecorder is the mock recorder for MockMongoClient.
-type MockMongoClientMockRecorder struct {
-	mock *MockMongoClient
+// MockmongoClientMockRecorder is the mock recorder for MockmongoClient.
+type MockmongoClientMockRecorder struct {
+	mock *MockmongoClient
 }
 
-// NewMockMongoClient creates a new mock instance.
-func NewMockMongoClient(ctrl *gomock.Controller) *MockMongoClient {
-	mock := &MockMongoClient{ctrl: ctrl}
-	mock.recorder = &MockMongoClientMockRecorder{mock}
+// NewMockmongoClient creates a new mock instance.
+func NewMockmongoClient(ctrl *gomock.Controller) *MockmongoClient {
+	mock := &MockmongoClient{ctrl: ctrl}
+	mock.recorder = &MockmongoClientMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockMongoClient) EXPECT() *MockMongoClientMockRecorder {
+func (m *MockmongoClient) EXPECT() *MockmongoClientMockRecorder {
 	return m.recorder
 }
 
 // Find mocks base method.
-func (m *MockMongoClient) Find(arg0 context.Context, arg1 interface{}, arg2 ...*options.FindOptions) (*mongo.Cursor, error) {
+func (m *MockmongoClient) Find(arg0 context.Context, arg1 interface{}, arg2 ...*options.FindOptions) (*mongo.Cursor, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -50,14 +50,14 @@ func (m *MockMongoClient) Find(arg0 context.Context, arg1 interface{}, arg2 ...*
 }
 
 // Find indicates an expected call of Find.
-func (mr *MockMongoClientMockRecorder) Find(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+func (mr *MockmongoClientMockRecorder) Find(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockMongoClient)(nil).Find), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockmongoClient)(nil).Find), varargs...)
 }
 
 // FindOne mocks base method.
-func (m *MockMongoClient) FindOne(arg0 context.Context, arg1 interface{}, arg2 ...*options.FindOneOptions) *mongo.SingleResult {
+func (m *MockmongoClient) FindOne(arg0 context.Context, arg1 interface{}, arg2 ...*options.FindOneOptions) *mongo.SingleResult {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -69,14 +69,14 @@ func (m *MockMongoClient) FindOne(arg0 context.Context, arg1 interface{}, arg2 .
 }
 
 // FindOne indicates an expected call of FindOne.
-func (mr *MockMongoClientMockRecorder) FindOne(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+func (mr *MockmongoClientMockRecorder) FindOne(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOne", reflect.TypeOf((*MockMongoClient)(nil).FindOne), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOne", reflect.TypeOf((*MockmongoClient)(nil).FindOne), varargs...)
 }
 
 // InsertOne mocks base method.
-func (m *MockMongoClient) InsertOne(arg0 context.Context, arg1 interface{}, arg2 ...*options.InsertOneOptions) (*mongo.InsertOneResult, error) {
+func (m *MockmongoClient) InsertOne(arg0 context.Context, arg1 interface{}, arg2 ...*options.InsertOneOptions) (*mongo.InsertOneResult, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -89,14 +89,14 @@ func (m *MockMongoClient) InsertOne(arg0 context.Context, arg1 interface{}, arg2
 }
 
 // InsertOne indicates an expected call of InsertOne.
-func (mr *MockMongoClientMockRecorder) InsertOne(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+func (mr *MockmongoClientMockRecorder) InsertOne(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertOne", reflect.TypeOf((*MockMongoClient)(nil).InsertOne), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertOne", reflect.TypeOf((*MockmongoClient)(nil).InsertOne), varargs...)
 }
 
 // UpdateOne mocks base method.
-func (m *MockMongoClient) UpdateOne(arg0 context.Context, arg1, arg2 interface{}, arg3 ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
+func (m *MockmongoClient) UpdateOne(arg0 context.Context, arg1, arg2 interface{}, arg3 ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {
@@ -109,8 +109,8 @@ func (m *MockMongoClient) UpdateOne(arg0 context.Context, arg1, arg2 interface{}
 }
 
 // UpdateOne indicates an expected call of UpdateOne.
-func (mr *MockMongoClientMockRecorder) UpdateOne(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+func (mr *MockmongoClientMockRecorder) UpdateOne(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockMongoClient)(nil).UpdateOne), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockmongoClient)(nil).UpdateOne), varargs...)
 }

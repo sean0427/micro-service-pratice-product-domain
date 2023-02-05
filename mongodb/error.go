@@ -1,6 +1,11 @@
 package mongodb
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
+
+const msg = "mongo error"
 
 type MongoError struct {
 	err error
@@ -11,5 +16,9 @@ func NewMongoError(err error) error {
 }
 
 func (e *MongoError) Error() string {
-	return fmt.Sprintf("mongo error: %v", e.err)
+	return fmt.Sprintf("%s %v", msg, e.err)
 }
+
+func (m *MongoError) Is(target error) bool { return strings.HasPrefix(target.Error(), msg) }
+
+func (m *MongoError) Unwrap() error { return m.err }

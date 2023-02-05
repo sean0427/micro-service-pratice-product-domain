@@ -114,7 +114,7 @@ func (h *handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if params.ID != "" {
+	if params.ID.IsZero() {
 		http.Error(w, "Update body should not with id", http.StatusBadRequest)
 		return
 	}

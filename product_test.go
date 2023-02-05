@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/sean0427/micro-service-pratice-product-domain/mock"
 	"github.com/sean0427/micro-service-pratice-product-domain/model"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func FuzzProductService_Get(f *testing.F) {
@@ -62,11 +63,11 @@ func FuzzProductService_Get(f *testing.F) {
 }
 
 func FuzzProductService_GetByID(f *testing.F) {
-	f.Add("test", "name2", "naum", "")
-	f.Add("test4", "name3", "naum", "")
-	f.Add("test43", "name52", "naum", "14")
-	f.Add("test4342", "name42", "naum", "")
-	f.Add("test41", "name2", "naum", "313")
+	f.Add(primitive.NewObjectID().Hex(), "name2", primitive.NewObjectID().Hex(), "")
+	f.Add(primitive.NewObjectID().Hex(), "name3", primitive.NewObjectID().Hex(), "")
+	f.Add(primitive.NewObjectID().Hex(), "name52", primitive.NewObjectID().Hex(), "14")
+	f.Add(primitive.NewObjectID().Hex(), "name42", primitive.NewObjectID().Hex(), "")
+	f.Add(primitive.NewObjectID().Hex(), "name2", primitive.NewObjectID().Hex(), "313")
 
 	f.Fuzz(func(t *testing.T, id, name, manu, errMsg string) {
 		c := gomock.NewController(t)
@@ -79,11 +80,12 @@ func FuzzProductService_GetByID(f *testing.F) {
 				if errMsg != "" {
 					return nil, errors.New(errMsg)
 				}
-
+				hex, _ := primitive.ObjectIDFromHex(id)
+				man, _ := primitive.ObjectIDFromHex(manu)
 				return &model.Product{
-					ID:             id,
+					ID:             hex,
 					Name:           name,
-					ManufacturerID: manu,
+					ManufacturerID: man,
 				}, nil
 			}).
 			Times(1)
@@ -100,13 +102,13 @@ func FuzzProductService_GetByID(f *testing.F) {
 			return
 		}
 
-		if item.ID != id {
+		if item.ID.Hex() != id {
 			t.Errorf("Get product expect %s, %s", id, item.ID)
 		}
 		if item.Name != name {
 			t.Errorf("Get product expect %s, %s", name, item.Name)
 		}
-		if item.ManufacturerID != manu {
+		if item.ManufacturerID.Hex() != manu {
 			t.Errorf("Get product expect %s, %s", manu, item.ManufacturerID)
 		}
 	})
@@ -126,7 +128,7 @@ func FuzzProductService_Update(f *testing.F) {
 
 		params := &model.Product{
 			Name:           name,
-			ManufacturerID: manu,
+			ManufacturerID: primitive.NewObjectID(),
 		}
 		repo.EXPECT().
 			Update(gomock.Any(), id, params).
@@ -171,7 +173,7 @@ func FuzzProductService_Create(f *testing.F) {
 
 		params := &model.Product{
 			Name:           name,
-			ManufacturerID: manu,
+			ManufacturerID: primitive.NewObjectID(),
 		}
 		repo.EXPECT().
 			Create(gomock.Any(), params).
