@@ -1,7 +1,8 @@
 package model
 
 type GetProductsParams struct {
-	Name *string
+	ManufacturerID *string
+	Name           *string
 }
 
 func StringToPointer(s string) *string {
