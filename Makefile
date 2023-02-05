@@ -5,3 +5,7 @@ mock_gen:
 
 test:
 	go test ./...
+
+build_push_to_kind:
+	docker build . -t product-domain
+	kind load docker-image product-domain --name micro-service

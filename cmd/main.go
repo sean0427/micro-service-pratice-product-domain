@@ -11,26 +11,26 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"time"
 
 	service "github.com/sean0427/micro-service-pratice-product-domain"
 	config "github.com/sean0427/micro-service-pratice-product-domain/config"
 	repository "github.com/sean0427/micro-service-pratice-product-domain/mongodb"
 	handler "github.com/sean0427/micro-service-pratice-product-domain/net"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
 	port = flag.Int("port", 8080, "port")
 )
 
-func newMongoDB() (*mongo.Client, error) {
+func newMongoOptions() (*options.ClientOptions, string, error) {
 	addr, err := config.GetMongoDBAddress()
 	if err != nil {
 		panic(err)
 	}
-	username, err := config.GetMongoDBName()
+	username, err := config.GetMongoDBUser()
 	if err != nil {
 		panic(err)
 	}
@@ -38,30 +38,32 @@ func newMongoDB() (*mongo.Client, error) {
 	if err != nil {
 		panic(err)
 	}
+
 	port := config.GetMongoDBPort()
-	return mongo.Connect(context.Background(), options.Client().
-		ApplyURI(fmt.Sprintf("mongodb://%s:%s", addr, port)).
-		SetAuth(options.Credential{
-			Username: username,
-			Password: password,
-		}))
+	serverAPIOptions := options.ServerAPI(options.ServerAPIVersion1)
+
+	databaseName, err := config.GetMongoDBName()
+	if err != nil {
+		panic(err)
+	}
+
+	return options.Client().
+		ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?directConnection=true&serverSelectionTimeoutMS=2000&retryWrites=true&w=majority", username, password, addr, port, databaseName)).
+		SetServerAPIOptions(serverAPIOptions), databaseName, nil
 }
 
 func startServer() {
 	fmt.Println("Starting server...")
 
-	mongoClient, err := newMongoDB()
+	options, databaseName, err := newMongoOptions()
 	if err != nil {
 		panic(err)
 	}
 
-	defer func() {
-		if err := mongoClient.Disconnect(context.Background()); err != nil {
-			panic(err)
-		}
-	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
-	databaseName, err := config.GetMongoDBName()
+	defer cancel()
+	mongoClient, err := mongo.Connect(ctx, options)
 	if err != nil {
 		panic(err)
 	}
@@ -83,17 +85,17 @@ func startServer() {
 		defer wg.Done()
 		err := server.ListenAndServe()
 		if errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("admission-webhook-server stopped: %v", err)
+			log.Fatalf("erver stopped: %v", err)
 		}
 	}()
-	log.Printf("admission webhook server started and listening on %d", *port)
+	log.Printf("server started and listening on %d", *port)
 
 	// gracefully shutdown
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	<-signalChan
 
-	log.Print("admission webhook received kill signal")
+	log.Print("received kill signal")
 	if err := server.Shutdown(context.Background()); err != nil {
 		log.Fatalf("server shutdown failed:%+v", err)
 	}
