@@ -118,16 +118,17 @@ func FuzzMondoClient_Get(f *testing.F) {
 }
 
 func FuzzMongoClient_GetByID(f *testing.F) {
-	f.Add("test", "")
+	f.Add("test", "", false)
 
 	for i := 0; i < 100; i++ {
-		f.Add(primitive.NewObjectID().String(), "")
+		f.Add(primitive.NewObjectID().String(), "", false)
 	}
 
-	f.Add("testErr", "err")
+	f.Add("testErr", "err", false)
+	f.Add("testErr", "", true)
 
 	returnedResult := model.Product{}
-	f.Fuzz(func(t *testing.T, ID, errMsg string) {
+	f.Fuzz(func(t *testing.T, ID, errMsg string, notFound bool) {
 		mc := mock.NewMockmongoClient(gomock.NewController(t))
 		mc.EXPECT().
 			FindOne(gomock.Any(), gomock.Eq(bson.E{Key: "_id", Value: ID})).
@@ -136,6 +137,9 @@ func FuzzMongoClient_GetByID(f *testing.F) {
 					return mongo.NewSingleResultFromDocument(&model.Product{}, errors.New(errMsg), nil)
 				}
 
+				if notFound {
+					return mongo.NewSingleResultFromDocument(&model.Product{}, mongo.ErrNoDocuments, nil)
+				}
 				return mongo.NewSingleResultFromDocument(returnedResult, nil, nil)
 
 			}).
@@ -158,6 +162,15 @@ func FuzzMongoClient_GetByID(f *testing.F) {
 		if err != nil {
 			t.Errorf("expected error to be nil, got %v", err)
 		}
+
+		if notFound {
+
+			if ret != nil {
+				t.Errorf("expected result to be nil, got %v", ret)
+			}
+			return
+		}
+
 		if *ret != returnedResult {
 			t.Errorf("error, expected result to be %v, got %v", *ret, *ret)
 		}
@@ -166,13 +179,14 @@ func FuzzMongoClient_GetByID(f *testing.F) {
 
 func FuzzMongoClient_Create(f *testing.F) {
 	for i := 0; i < 100; i++ {
-		f.Add(primitive.NewObjectID().Hex(), "")
+		f.Add(primitive.NewObjectID().Hex(), "", false)
 	}
 
-	f.Add("test", "testErr")
-	f.Add("test", "testErr2")
+	f.Add("test", "testErr", false)
+	f.Add("test", "testErr2", false)
+	f.Add("err", "", true)
 
-	f.Fuzz(func(t *testing.T, returnId, errMsg string) {
+	f.Fuzz(func(t *testing.T, returnId, errMsg string, insertIdErr bool) {
 		testItem := model.Product{
 			ID:   primitive.NewObjectID(),
 			Name: uuid.NewString(),
@@ -186,6 +200,13 @@ func FuzzMongoClient_Create(f *testing.F) {
 				if errMsg != "" {
 					return nil, errors.New(errMsg)
 				}
+
+				if insertIdErr {
+					return &mongo.InsertOneResult{
+						InsertedID: "aaa",
+					}, nil
+				}
+
 				if _, ok := params.(model.Product); ok {
 					_id, _ := primitive.ObjectIDFromHex(returnId)
 					return &mongo.InsertOneResult{InsertedID: _id}, nil
@@ -198,7 +219,7 @@ func FuzzMongoClient_Create(f *testing.F) {
 
 		client := mongoRepository{client: mc}
 		id, err := client.Create(context.Background(), &testItem)
-		if errMsg != "" {
+		if errMsg != "" || insertIdErr {
 			if err == nil {
 				t.Fatalf("expected error, got none")
 			}
@@ -220,16 +241,16 @@ func FuzzMongoClient_Create(f *testing.F) {
 }
 
 func FuzzMondoClient_Update(f *testing.F) {
-	returnedResult := &mongo.UpdateResult{ModifiedCount: int64(1)}
-
 	for i := 0; i < 100; i++ {
-		f.Add(uuid.NewString(), uuid.NewString(), primitive.NewObjectID().String(), "")
+		f.Add(uuid.NewString(), uuid.NewString(), primitive.NewObjectID().String(), "", 1)
 	}
-	f.Add("tewst", "tseta", "feafge", "")
-	f.Add("tewst1", "tseta2", "feafge", "err")
-	f.Add("tewst2", "tseta3", "feafge", "err2")
 
-	f.Fuzz(func(t *testing.T, name, manufacturer, ID, errMsg string) {
+	f.Add("tewst", "tseta", "feafge", "", 1)
+	f.Add("tewst1", "tseta2", "feafge1", "err", 1)
+	f.Add("tewst2", "tseta3", "feafge54", "err2", 1)
+	f.Add("tewst2", "tseta3", "feafge2", "", 0)
+
+	f.Fuzz(func(t *testing.T, name, manufacturer, ID, errMsg string, returnedModified int) {
 		testItem := model.Product{Name: name, ManufacturerID: primitive.NewObjectID()}
 
 		mc := mock.NewMockmongoClient(gomock.NewController(t))
@@ -240,7 +261,7 @@ func FuzzMondoClient_Update(f *testing.F) {
 					return nil, errors.New(errMsg)
 				}
 
-				return returnedResult, nil
+				return &mongo.UpdateResult{ModifiedCount: int64(returnedModified)}, nil
 			}).
 			Times(1)
 
@@ -269,8 +290,52 @@ func FuzzMondoClient_Update(f *testing.F) {
 			t.Errorf("expected error to be nil, got %v", err)
 		}
 
+		if returnedModified == 0 {
+			if ret != nil {
+				t.Errorf("expected ret to be nil, got %v", ret)
+			}
+			return
+		}
+
 		if ret != &testItem {
 			t.Errorf("expected %v, got %v", &testItem, ret)
+		}
+	})
+}
+
+func FuzzMondoClient_Delete(f *testing.F) {
+	for i := 0; i < 100; i++ {
+		f.Add(primitive.NewObjectID().Hex(), "")
+	}
+	f.Add("tewst", "err")
+	f.Add("tewst1", "error")
+	f.Add("tewst2", "error")
+
+	f.Fuzz(func(t *testing.T, id, errMsg string) {
+		mc := mock.NewMockmongoClient(gomock.NewController(t))
+		mc.EXPECT().
+			DeleteOne(gomock.Any(), bson.D{{Key: "_id", Value: id}}).
+			DoAndReturn(func(context.Context, interface{}, ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
+				if errMsg != "" {
+					return nil, errors.New(errMsg)
+				}
+				return nil, nil
+			}).Times(1)
+		r := mongoRepository{client: mc}
+		err := r.Delete(context.Background(), id)
+		if errMsg != "" {
+			if err == nil {
+				t.Fatalf("expected error, got none")
+			}
+			unWrap := errors.Unwrap(err).Error()
+			if errMsg != unWrap {
+				t.Errorf("expected error to be %s, got %s", errMsg, unWrap)
+				return
+			}
+			return
+		}
+		if err != nil {
+			t.Errorf("expected error to be nil, got %v", err)
 		}
 	})
 }
