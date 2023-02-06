@@ -14,6 +14,7 @@ type service interface {
 	GetByID(context.Context, string) (*model.Product, error)
 	Create(ctx context.Context, product *model.Product) (string, error)
 	Update(ctx context.Context, id string, params *model.Product) (*model.Product, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type handler struct {
@@ -127,6 +128,19 @@ func (h *handler) Update(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "id is required", http.StatusBadRequest)
+		return
+	}
+	if err := h.service.Delete(r.Context(), id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *handler) Handler() *chi.Mux {
 	r := chi.NewRouter()
 
@@ -135,6 +149,7 @@ func (h *handler) Handler() *chi.Mux {
 		r.Get("/:id", h.GetById)
 		r.Post("/", h.Create)
 		r.Put("/:id", h.Update)
+		r.Delete("/:id", h.Delete)
 	})
 
 	return r

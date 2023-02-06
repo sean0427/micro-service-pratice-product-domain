@@ -36,6 +36,26 @@ func (m *MockmongoClient) EXPECT() *MockmongoClientMockRecorder {
 	return m.recorder
 }
 
+// DeleteOne mocks base method.
+func (m *MockmongoClient) DeleteOne(arg0 context.Context, arg1 interface{}, arg2 ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteOne", varargs...)
+	ret0, _ := ret[0].(*mongo.DeleteResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteOne indicates an expected call of DeleteOne.
+func (mr *MockmongoClientMockRecorder) DeleteOne(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOne", reflect.TypeOf((*MockmongoClient)(nil).DeleteOne), varargs...)
+}
+
 // Find mocks base method.
 func (m *MockmongoClient) Find(arg0 context.Context, arg1 interface{}, arg2 ...*options.FindOptions) (*mongo.Cursor, error) {
 	m.ctrl.T.Helper()

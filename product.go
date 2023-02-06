@@ -11,6 +11,7 @@ type repository interface {
 	GetByID(ctx context.Context, id string) (*model.Product, error)
 	Create(ctx context.Context, product *model.Product) (string, error)
 	Update(ctx context.Context, id string, params *model.Product) (*model.Product, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type ProductService struct {
@@ -37,4 +38,8 @@ func (s *ProductService) Create(ctx context.Context, product *model.Product) (st
 
 func (s *ProductService) Update(ctx context.Context, id string, params *model.Product) (*model.Product, error) {
 	return s.repo.Update(ctx, id, params)
+}
+
+func (s *ProductService) Delete(ctx context.Context, id string) error {
+	return s.repo.Delete(ctx, id)
 }

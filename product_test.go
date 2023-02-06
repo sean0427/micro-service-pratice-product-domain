@@ -203,3 +203,36 @@ func FuzzProductService_Create(f *testing.F) {
 		}
 	})
 }
+
+func FuzzProductService_Delete(f *testing.F) {
+	f.Add("test", "")
+	f.Add("test4", "")
+	f.Add("test43", "14")
+	f.Add(primitive.NewObjectID().Hex(), "14")
+
+	f.Fuzz(func(t *testing.T, id, errMsg string) {
+		c := gomock.NewController(t)
+		repo := mock.NewMockrepository(c)
+		service := New(repo)
+
+		repo.EXPECT().
+			Delete(gomock.Any(), id).
+			DoAndReturn(func(ctx context.Context, id string) error {
+				if errMsg != "" {
+					return errors.New(errMsg)
+				}
+
+				return nil
+			}).
+			Times(1)
+
+		err := service.Delete(context.Background(), id)
+		if errMsg != "" {
+			if err == nil {
+				t.Errorf("Error should not be nil")
+			}
+
+			return
+		}
+	})
+}
