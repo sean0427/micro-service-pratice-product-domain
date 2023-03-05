@@ -2,10 +2,10 @@ package net
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 	"github.com/sean0427/micro-service-pratice-product-domain/model"
 )
 
@@ -26,15 +26,15 @@ func New(service service) *handler {
 		service: service}
 }
 
-func getProductsParams(r *http.Request) (*model.GetProductsParams, error) {
+func getProductsParams(c *gin.Context) (*model.GetProductsParams, error) {
 	params := model.GetProductsParams{}
 
-	name := chi.URLParam(r, "name")
+	name := c.Params.ByName("name")
 	if name != "" {
 		params.Name = &name
 	}
 
-	manu := chi.URLParam(r, "manufacturer")
+	manu := c.Params.ByName("manufacturer")
 	if manu != "" {
 		params.ManufacturerID = &manu
 	}
@@ -42,115 +42,92 @@ func getProductsParams(r *http.Request) (*model.GetProductsParams, error) {
 	return &params, nil
 }
 
-func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func (h *handler) Get(c *gin.Context) {
 
-	params, err := getProductsParams(r)
+	params, err := getProductsParams(c)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		c.AbortWithStatus(http.StatusBadRequest)
 	}
 
-	products, err := h.service.Get(r.Context(), params)
+	products, err := h.service.Get(c, params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 
-	if err := json.NewEncoder(w).Encode(products); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSONP(http.StatusOK, products)
 }
 
-func (h *handler) GetById(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	id := chi.URLParam(r, "id")
-	product, err := h.service.GetByID(r.Context(), id)
+func (h *handler) GetById(c *gin.Context) {
+	id, found := c.Params.Get("id")
+	if !found {
+		// should never happen
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+	product, err := h.service.GetByID(c, id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 
-	if err := json.NewEncoder(w).Encode(product); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSONP(http.StatusOK, product)
 }
 
-func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Create(c *gin.Context) {
 	var params *model.Product
 
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	if err := c.BindJSON(&params); err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 
-	id, err := h.service.Create(r.Context(), params)
+	id, err := h.service.Create(c, params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 
-	w.Write([]byte(id))
-	w.WriteHeader(http.StatusCreated)
+	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
-func (h *handler) Update(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Update(c *gin.Context) {
 	var params *model.Product
 
-	id := chi.URLParam(r, "id")
-	if id != "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	id, found := c.Params.Get("id")
+	if found {
+		c.AbortWithStatus(http.StatusBadRequest)
 	}
 
 	if params.ID.IsZero() {
-		http.Error(w, "Update body should not with id", http.StatusBadRequest)
+		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Update body should not with id"))
+	}
+
+	if err := c.BindJSON(&params); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if _, err := h.service.Update(r.Context(), id, params); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if _, err := h.service.Update(c, id, params); err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	c.Status(http.StatusCreated)
 }
 
-func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	if id == "" {
-		http.Error(w, "id is required", http.StatusBadRequest)
-		return
+func (h *handler) Delete(c *gin.Context) {
+	id := c.Params.ByName("id")
+
+	if err := h.service.Delete(c, id); err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 	}
-	if err := h.service.Delete(r.Context(), id); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+
+	c.Status(http.StatusNoContent)
 }
 
-func (h *handler) Handler() *chi.Mux {
-	r := chi.NewRouter()
-
-	r.Route("/products", func(r chi.Router) {
-		r.Get("/", h.Get)
-		r.Get("/:id", h.GetById)
-		r.Post("/", h.Create)
-		r.Put("/:id", h.Update)
-		r.Delete("/:id", h.Delete)
-	})
-
-	return r
+func (h *handler) Register(r *gin.Engine) {
+	p := r.Group("/products")
+	{
+		p.GET("/", h.Get)
+		p.GET("/:id")
+		r.GET("/:id", h.GetById)
+		r.POST("/", h.Create)
+		r.PUT("/:id", h.Update)
+		r.DELETE("/:id", h.Delete)
+	}
 }
