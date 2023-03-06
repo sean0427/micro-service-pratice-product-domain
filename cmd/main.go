@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	service "github.com/sean0427/micro-service-pratice-product-domain"
 	config "github.com/sean0427/micro-service-pratice-product-domain/config"
 	repository "github.com/sean0427/micro-service-pratice-product-domain/mongodb"
@@ -72,11 +73,13 @@ func startServer() {
 	s := service.New(r)
 	h := handler.New(s)
 
-	handler := h.Handler()
+	g := gin.Default()
+
+	h.Register(g)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", *port),
-		Handler: handler,
+		Handler: g,
 	}
 
 	var wg sync.WaitGroup
