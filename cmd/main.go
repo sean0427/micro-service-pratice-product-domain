@@ -16,6 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 	service "github.com/sean0427/micro-service-pratice-product-domain"
 	config "github.com/sean0427/micro-service-pratice-product-domain/config"
+	"github.com/sean0427/micro-service-pratice-product-domain/inbox"
 	repository "github.com/sean0427/micro-service-pratice-product-domain/mongodb"
 	handler "github.com/sean0427/micro-service-pratice-product-domain/net"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -53,6 +54,14 @@ func newMongoOptions() (*options.ClientOptions, string, error) {
 		SetServerAPIOptions(serverAPIOptions), databaseName, nil
 }
 
+func getkafa() string {
+	path, err := config.GetKafkaPath()
+	if err != nil {
+		panic(err)
+	}
+	return path
+}
+
 func startServer() {
 	fmt.Println("Starting server...")
 
@@ -61,13 +70,15 @@ func startServer() {
 		panic(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
 	defer cancel()
 	mongoClient, err := mongo.Connect(ctx, options)
 	if err != nil {
 		panic(err)
 	}
+
+	kafkaPath := getkafa()
 
 	r := repository.New(mongoClient.Database(databaseName))
 	s := service.New(r)
@@ -93,6 +104,9 @@ func startServer() {
 	}()
 	log.Printf("server started and listening on %d", *port)
 
+	// TODO: tempoary here, might using other runtime?
+	inbox.Listening(ctx, kafkaPath)
+
 	// gracefully shutdown
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
@@ -102,6 +116,7 @@ func startServer() {
 	if err := server.Shutdown(context.Background()); err != nil {
 		log.Fatalf("server shutdown failed:%+v", err)
 	}
+	<-ctx.Done()
 	wg.Wait()
 }
 
